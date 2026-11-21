@@ -1,0 +1,6 @@
+@BIITPaperSettingAPI_HostAddress = http://localhost:5291
+
+GET {{BIITPaperSettingAPI_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###

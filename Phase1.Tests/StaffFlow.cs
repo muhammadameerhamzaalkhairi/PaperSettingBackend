@@ -71,6 +71,7 @@ public class StaffFlow
             var exam = await http.GetFromJsonAsync<CurrentExamResponse>(route);
             Assert.AreEqual("Final", exam!.ExamType);
             Assert.AreEqual("PUBLISHED", exam.DatesheetStatus);
+            await AcademicSetupFlow.VerifyAsync(http, db, restricted, token);
             await Execute(db, """
                 DECLARE @other int=(SELECT MIN(exam_cycle_id) FROM dbo.EXAM_CYCLE);
                 INSERT dbo.DATESHEET(exam_cycle_id, revision_number, status, published_by_user_id, published_at)

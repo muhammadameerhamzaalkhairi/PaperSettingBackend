@@ -105,6 +105,8 @@ internal static class CoverageFlow
             """,db);
         participants.Parameters.AddWithValue("@exam",exam);
         Assert.AreEqual(3,Convert.ToInt32(await participants.ExecuteScalarAsync()));
+        await WorkspaceFlow.VerifyAsync(http,db,history[0].GetProperty("paper_id").GetInt32(),topics[0],topics[1],
+            final.GetProperty("eligibleClos")[0].GetProperty("exam_clo_id").GetInt32(),secondTeacher,firstTeacher,hod);
         As(director);
     }
 }

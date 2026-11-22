@@ -31,6 +31,8 @@ public class StaffFlow
         start.ArgumentList.Add("--urls");
         start.ArgumentList.Add("http://127.0.0.1:0");
         start.Environment["Logging__LogLevel__Microsoft.Hosting.Lifetime"] = "Information";
+        var privateFolder = Directory.CreateTempSubdirectory("BIIT-Diagrams-");
+        start.Environment["Files__PrivateRoot"] = privateFolder.FullName;
         using var api = Process.Start(start)!;
         try
         {
@@ -88,6 +90,7 @@ public class StaffFlow
         {
             if (!api.HasExited) api.Kill(true);
             await api.WaitForExitAsync();
+            privateFolder.Delete(true);
         }
     }
 

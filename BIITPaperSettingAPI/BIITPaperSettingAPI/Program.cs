@@ -61,6 +61,7 @@ var tokens = new StaffTokens(builder.Configuration);
 builder.Services.AddSingleton(tokens);
 builder.Services.AddScoped<StaffAccessService>();
 builder.Services.AddScoped<SetupProcedures>();
+builder.Services.AddScoped<PrivateDiagrams>();
 builder.Services.AddScoped<PasswordHasher<string>>();
 builder.Services.AddProblemDetails();
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme).AddJwtBearer(options =>

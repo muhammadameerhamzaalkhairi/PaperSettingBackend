@@ -112,6 +112,7 @@ internal static class AcademicSetupFlow
         await CoverageFlow.VerifyAsync(http, db, directorToken, hod, firstTeacher, secondTeacher);
         await CheckingFlow.VerifyAsync(http, db, restricted, hod, firstTeacher);
         await ReviewFlow.VerifyAsync(http, db, directorToken, hod, firstTeacher, secondTeacher);
+        await PrintFlow.VerifyAsync(http,db,directorToken,dataCell);
         http.DefaultRequestHeaders.Authorization = new("Bearer",directorToken);
     }
 

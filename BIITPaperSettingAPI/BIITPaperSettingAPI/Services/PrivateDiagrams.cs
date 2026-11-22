@@ -35,20 +35,26 @@ public class PrivateDiagrams(IConfiguration config)
         else
             return null;
 
+        string key = await StoreBytesAsync(bytes,cancellation);
+        return new StoredDiagram(key,name,mime,Convert.ToHexString(SHA256.HashData(bytes)));
+    }
+
+    // Generated PDF bhi configured private folder mein hi rehti hai.
+    public async Task<string> StoreBytesAsync(byte[] bytes, CancellationToken cancellation)
+    {
         string key = Guid.NewGuid().ToString("N");
         Directory.CreateDirectory(folder);
         try
         {
             await File.WriteAllBytesAsync(Path.Combine(folder,key),bytes,cancellation);
+            return key;
         }
         catch
         {
             Delete(key);
             throw;
         }
-        return new StoredDiagram(key,name,mime,Convert.ToHexString(SHA256.HashData(bytes)));
     }
-
     public FileStream? Open(string key)
     {
         if (!Guid.TryParseExact(key,"N",out _))

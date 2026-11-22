@@ -48,6 +48,7 @@ internal static class ReviewFlow
             """);
         As(setter);
         Assert.AreEqual(HttpStatusCode.Conflict,(await Submit(original)).StatusCode);
+        await PrintFlow.AttachFixtureDiagram(http,original);
         await Align(original);
         As(acting);
         Assert.AreEqual(HttpStatusCode.Forbidden,(await Submit(original)).StatusCode);

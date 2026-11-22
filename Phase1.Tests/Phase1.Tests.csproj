@@ -8,6 +8,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="PdfPig" Version="0.1.16" />
     <ProjectReference Include="../BIITPaperSettingAPI/BIITPaperSettingAPI/BIITPaperSettingAPI.csproj" />
     <PackageReference Include="MSTest" Version="4.0.2" />
   </ItemGroup>

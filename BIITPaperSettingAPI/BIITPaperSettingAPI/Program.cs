@@ -62,6 +62,8 @@ builder.Services.AddSingleton(tokens);
 builder.Services.AddScoped<StaffAccessService>();
 builder.Services.AddScoped<SetupProcedures>();
 builder.Services.AddScoped<PrivateDiagrams>();
+builder.Services.AddScoped<ApprovedPaperPdf>();
+PdfSharp.Fonts.GlobalFontSettings.UseWindowsFontsUnderWindows = true;
 builder.Services.AddScoped<PasswordHasher<string>>();
 builder.Services.AddProblemDetails();
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme).AddJwtBearer(options =>

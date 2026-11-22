@@ -44,7 +44,13 @@ public class WorkspaceController(SetupProcedures procedures) : SetupController(p
     public Task<IActionResult> Edit(int versionId, int itemId, QuestionRequest request, CancellationToken cancellation)
         => Save(versionId, itemId, request, cancellation);
 
-    private async Task<IActionResult> Save(int versionId, int? itemId, QuestionRequest request, CancellationToken cancellation)
+    // Director ki edit asal submission se judi alag frozen revision banati hai.
+    [HttpPost("submissions/{submissionId:int:min(1)}/versions/{versionId:int:min(1)}/items/{itemId:int:min(1)}/revisions")]
+    public Task<IActionResult> DirectorEdit(int submissionId, int versionId, int itemId, DirectorEditRequest request, CancellationToken cancellation)
+        => Save(versionId, itemId, request, cancellation, submissionId, request.Reason, request.DelegationId);
+
+    private async Task<IActionResult> Save(int versionId, int? itemId, QuestionRequest request, CancellationToken cancellation,
+        int? submissionId = null, string? reason = null, int? delegationId = null)
     {
         var keys = new HashSet<int>();
         foreach (var part in request.Parts)
@@ -70,7 +76,10 @@ public class WorkspaceController(SetupProcedures procedures) : SetupController(p
             new SqlParameter("@VersionId",versionId), Token(request), new SqlParameter("@Prompt",request.Prompt),
             new SqlParameter("@Difficulty",request.Difficulty), new SqlParameter("@PartsJson",JsonSerializer.Serialize(parts)),
             new SqlParameter("@CloMappingsJson",JsonSerializer.Serialize(clos)), new SqlParameter("@Placement",request.Placement),
-            new SqlParameter("@PaperItemId", SqlDbType.Int) {Value=(object?)itemId ?? DBNull.Value});
+            new SqlParameter("@PaperItemId", SqlDbType.Int) {Value=(object?)itemId ?? DBNull.Value},
+            new SqlParameter("@ReviewSubmissionId", SqlDbType.Int) {Value=(object?)submissionId ?? DBNull.Value},
+            new SqlParameter("@EditReason", SqlDbType.NVarChar, 500) {Value=(object?)reason ?? DBNull.Value},
+            new SqlParameter("@DelegationId", SqlDbType.Int) {Value=(object?)delegationId ?? DBNull.Value});
     }
 
     // =====================================================

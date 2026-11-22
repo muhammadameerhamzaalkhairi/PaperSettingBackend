@@ -21,6 +21,8 @@ try {
     if ($LASTEXITCODE -ne 0) { throw 'Phase 4 SQL installation failed' }
     sqlcmd -S $server -E -C -b -d $database -v "TargetDatabase=$database" -i "$PSScriptRoot/../Sql/005_AttachDraftFile.sql"
     if ($LASTEXITCODE -ne 0) { throw 'Phase 5 SQL installation failed' }
+    sqlcmd -S $server -E -C -b -d $database -v "TargetDatabase=$database" -i "$PSScriptRoot/../Sql/007_ReviewWorkflow.sql"
+    if ($LASTEXITCODE -ne 0) { throw 'Phase 7 SQL installation failed' }
     $pipe=((sqllocaldb info $instance | Select-String 'np:\\\\').Line -split 'np:',2)[1].Trim()
     $env:Phase1Admin="Server=$server;Database=$database;Integrated Security=true;Encrypt=false"
     $password='T3st!'+[Guid]::NewGuid().ToString('N')

@@ -41,7 +41,8 @@ public abstract class SetupController(SetupProcedures procedures) : ControllerBa
             (error.Number == 51031 && (error.Message.Contains("Not a paper contributor") || error.Message.Contains("Contributors add extra") || error.Message.Contains("cannot be edited by you")))) { return Forbid(); }
         catch (SqlException error) when (error.Number is 51003 or 51004 or 51006 ||
             (error.Number == 51031 && (error.Message.Contains("stale") || error.Message.Contains("latest draft") || error.Message.Contains("frozen") || error.Message.Contains("Copy question to a new revision")))) { return Conflict(new { message = error.Message }); }
-        catch (SqlException error) when (error.Number == 51050) { return Conflict(new { message = error.Message }); }
+        catch (SqlException error) when (error.Number == 51040 && error.Message.Contains("Director delegation expired or invalid")) { return Forbid(); }
+        catch (SqlException error) when (error.Number is 51040 or 51050) { return Conflict(new { message = error.Message }); }
         catch (SqlException error) when (error.Number == 51031) { return BadRequest(new { message = error.Message }); }
         catch (SqlException error) when (error.Number == 51020 && error.Message.Contains("not assigned to you")) { return Forbid(); }
         catch (SqlException error) when (error.Number == 51020 && error.Message.Contains("Invalid topic/status")) { return BadRequest(error.Message); }

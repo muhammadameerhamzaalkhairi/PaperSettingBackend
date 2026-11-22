@@ -21,19 +21,23 @@ public abstract class SetupController(SetupProcedures procedures) : ControllerBa
             return NoContent();
         }
         catch (SqlException error) when (error.Number == 51001) { return Forbid(); }
-        catch (SqlException error) when (error.Number is 51010 or 51060) { return Conflict(new { message = error.Message }); }
+        catch (SqlException error) when (error.Number is 51010 or 51020 or 51060) { return Conflict(new { message = error.Message }); }
         catch (SqlException error) when (error.Number is 2601 or 2627) { return Conflict("Duplicate record."); }
         catch (SqlException error) when (error.Number is 547 or 2628) { return BadRequest("Invalid reference or field value."); }
     }
 
-    protected async Task<IActionResult> ReadAsync(string procedure, string[] names, CancellationToken cancellation)
+    protected async Task<IActionResult> ReadAsync(string procedure, string[] names, CancellationToken cancellation, params SqlParameter[] parameters)
     {
         if (!int.TryParse(User.FindFirst("sub")?.Value, out int actorId) || actorId <= 0)
             return Unauthorized();
         try
         {
-            return Ok(await procedures.ReadAsync(procedure, actorId, names, cancellation));
+            return Ok(await procedures.ReadAsync(procedure, actorId, names, cancellation, parameters));
         }
-        catch (SqlException error) when (error.Number == 51001) { return Forbid(); }
+        catch (SqlException error) when (error.Number is 51001 or 51002) { return Forbid(); }
+        catch (SqlException error) when (error.Number == 51020 && error.Message.Contains("not assigned to you")) { return Forbid(); }
+        catch (SqlException error) when (error.Number == 51020 && error.Message.Contains("Invalid topic/status")) { return BadRequest(error.Message); }
+        catch (SqlException error) when (error.Number is 51020 or 51030) { return Conflict(new { message = error.Message }); }
+        catch (SqlException error) when (error.Number == 547) { return BadRequest("Invalid assignment or due date."); }
     }
 }

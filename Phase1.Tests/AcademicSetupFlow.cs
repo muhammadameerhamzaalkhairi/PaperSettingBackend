@@ -13,7 +13,7 @@ internal static class AcademicSetupFlow
     public static async Task VerifyAsync(HttpClient http, SqlConnection db, SqlConnection restricted, string directorToken)
     {
         string password = Convert.ToBase64String(RandomNumberGenerator.GetBytes(32));
-        foreach (string email in new[] { "hod@example.invalid", "datacell@example.invalid" })
+        foreach (string email in new[] { "hod@example.invalid", "datacell@example.invalid", "amir@example.invalid", "saeed@example.invalid" })
         {
             using var seed = new SqlCommand("UPDATE dbo.APP_USER SET password_hash=@hash WHERE email=@email", db);
             seed.Parameters.AddWithValue("@hash", new PasswordHasher<string>().HashPassword(email, password));
@@ -107,6 +107,9 @@ internal static class AcademicSetupFlow
         await Task.Delay(1100);
         (await http.PostAsync($"/api/academic/teaching-assignments/{assignment}/end", null)).EnsureSuccessStatusCode();
         await DatesheetFlow.VerifyAsync(http, db, dataCell, directorToken);
+        var firstTeacher = await Login(http, "amir@example.invalid", password);
+        var secondTeacher = await Login(http, "saeed@example.invalid", password);
+        await CoverageFlow.VerifyAsync(http, db, directorToken, hod, firstTeacher, secondTeacher);
         http.DefaultRequestHeaders.Authorization = new("Bearer",directorToken);
     }
 

@@ -8,7 +8,7 @@ namespace Phase1.Tests;
 internal static class CoverageFlow
 {
     public static async Task VerifyAsync(HttpClient http, SqlConnection db, string director,
-        string hod, string firstTeacher, string secondTeacher)
+        string hod, string firstTeacher, string secondTeacher, string dataCell)
     {
         // Disposable fixture: teen sections, aik offering, aik exam aur do outline topics.
         using var seed = new SqlCommand("""
@@ -34,7 +34,7 @@ internal static class CoverageFlow
               CASE s.section_name WHEN 'A' THEN 'DEMO-T1' WHEN 'B' THEN 'DEMO-T2' ELSE 'DEMO-HOD' END
             WHERE os.offering_id=@offering;
             INSERT dbo.COURSE_EXAM(offering_id,exam_cycle_id,required_marks,duration_minutes,configured_by_user_id)
-            VALUES(@offering,@cycle,60,90,@hod);
+            VALUES(@offering,@cycle,20,90,@hod);
             SET @exam=SCOPE_IDENTITY();
             INSERT dbo.EXAM_CLO(course_exam_id,clo_id) SELECT @exam,clo_id FROM dbo.CLO WHERE outline_id=@outline;
             INSERT dbo.USER_ROLE(user_id,role_id,department_id,valid_from)
@@ -47,6 +47,13 @@ internal static class CoverageFlow
         string root = $"/api/exams/{exam}";
         string coverage = root + "/coverage";
         void As(string token) => http.DefaultRequestHeaders.Authorization = new("Bearer",token);
+        // Isi exam ki datesheet se shuru karke isi paper ki receipt tak jayenge.
+        using var findCycle=new SqlCommand("SELECT exam_cycle_id FROM dbo.COURSE_EXAM WHERE course_exam_id=@exam",db);
+        findCycle.Parameters.AddWithValue("@exam",exam);
+        int cycle=Convert.ToInt32(await findCycle.ExecuteScalarAsync());
+        As(dataCell);
+        int draft=await DatesheetFlow.Draft(http,$"/api/datesheets/cycles/{cycle}",[exam]);
+        (await DatesheetFlow.Publish(http,draft)).EnsureSuccessStatusCode();
         As(hod);
         var initial = await http.GetFromJsonAsync<JsonElement>(coverage);
         var sections = initial.GetProperty("sections").EnumerateArray().OrderBy(s=>s.GetProperty("section_name").GetString()).ToArray();
@@ -105,8 +112,8 @@ internal static class CoverageFlow
             """,db);
         participants.Parameters.AddWithValue("@exam",exam);
         Assert.AreEqual(3,Convert.ToInt32(await participants.ExecuteScalarAsync()));
-        await WorkspaceFlow.VerifyAsync(http,db,history[0].GetProperty("paper_id").GetInt32(),topics[0],topics[1],
-            final.GetProperty("eligibleClos")[0].GetProperty("exam_clo_id").GetInt32(),secondTeacher,firstTeacher,hod);
+        await WorkspaceFlow.VerifyAsync(http,history[0].GetProperty("paper_id").GetInt32(),topics[0],topics[1],
+            final.GetProperty("eligibleClos")[0].GetProperty("exam_clo_id").GetInt32(),secondTeacher,firstTeacher,hod,director,dataCell,teachers[1]);
         As(director);
     }
 }

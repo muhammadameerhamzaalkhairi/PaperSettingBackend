@@ -101,6 +101,8 @@ internal static class AcademicSetupFlow
         http.DefaultRequestHeaders.Authorization = new("Bearer",directorToken);
         (await http.PostAsync($"/api/staff/delegations/{delegation}/revoke", null)).EnsureSuccessStatusCode();
         (await http.PostAsync($"/api/staff/roles/{teacherRole}/end", null)).EnsureSuccessStatusCode();
+        await DashboardFlow.OutsideDepartment(http,db,staffToken);
+        http.DefaultRequestHeaders.Authorization = new("Bearer",directorToken);
         (await http.PutAsJsonAsync($"/api/staff/accounts/{staff}/active",new {isActive=false})).EnsureSuccessStatusCode();
         http.DefaultRequestHeaders.Authorization = new("Bearer", dataCell);
         // Assignment ka end starts_at se baad hona chahiye (SQL second precision).
@@ -109,10 +111,11 @@ internal static class AcademicSetupFlow
         await DatesheetFlow.VerifyAsync(http, db, dataCell, directorToken);
         var firstTeacher = await Login(http, "amir@example.invalid", password);
         var secondTeacher = await Login(http, "saeed@example.invalid", password);
-        await CoverageFlow.VerifyAsync(http, db, directorToken, hod, firstTeacher, secondTeacher);
+        await CoverageFlow.VerifyAsync(http, db, directorToken, hod, firstTeacher, secondTeacher, dataCell);
         await CheckingFlow.VerifyAsync(http, db, restricted, hod, firstTeacher);
         await ReviewFlow.VerifyAsync(http, db, directorToken, hod, firstTeacher, secondTeacher);
         await PrintFlow.VerifyAsync(http,db,directorToken,dataCell);
+        await DashboardFlow.VerifyAsync(http,directorToken,dataCell,hod,firstTeacher,secondTeacher);
         http.DefaultRequestHeaders.Authorization = new("Bearer",directorToken);
     }
 

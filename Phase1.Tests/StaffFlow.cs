@@ -76,7 +76,7 @@ public class StaffFlow
             await AcademicSetupFlow.VerifyAsync(http, db, restricted, token);
             var changed = await http.GetFromJsonAsync<CurrentExamResponse>(route);
             Assert.AreNotEqual(exam.ActiveExamCycleId, changed!.ActiveExamCycleId);
-            Assert.AreEqual("Spring 2026", changed.SessionName);
+            Assert.AreEqual("Coverage Test", changed.SessionName);
             await Execute(db, "UPDATE dbo.SYSTEM_SETTINGS SET active_exam_cycle_id=NULL,active_datesheet_id=NULL");
             var empty = await http.GetFromJsonAsync<CurrentExamResponse>(route);
             Assert.IsNull(empty!.ActiveExamCycleId);

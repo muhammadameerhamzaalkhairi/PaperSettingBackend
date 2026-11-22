@@ -21,8 +21,10 @@ public abstract class SetupController(SetupProcedures procedures) : ControllerBa
                 return Ok(new { id });
             return NoContent();
         }
-        catch (SqlException error) when (error.Number == 51001) { return Forbid(); }
+        catch (SqlException error) when (error.Number is 51001 or 51002) { return Forbid(); }
+        catch (SqlException error) when (error.Number == 51040 && procedure == "dbo.usp_AddComment") { return BadRequest(new { message = error.Message }); }
         catch (SqlException error) when (error.Number == 51040) { return NotFound(new { message = error.Message }); }
+        catch (SqlException error) when (error.Number == 51060 && error.Message.Contains("not found")) { return NotFound(); }
         catch (SqlException error) when (error.Number is 51010 or 51020 or 51060) { return Conflict(new { message = error.Message }); }
         catch (SqlException error) when (error.Number is 2601 or 2627) { return Conflict("Duplicate record."); }
         catch (SqlException error) when (error.Number is 547 or 2628) { return BadRequest("Invalid reference or field value."); }

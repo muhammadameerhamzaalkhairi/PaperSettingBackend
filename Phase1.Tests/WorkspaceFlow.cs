@@ -1,14 +1,14 @@
 using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
-using Microsoft.Data.SqlClient;
+
 
 namespace Phase1.Tests;
 
 internal static class WorkspaceFlow
 {
-    public static async Task VerifyAsync(HttpClient http, SqlConnection db, int paper, int topic, int outsideTopic,
-        int clo, string setter, string contributor, string other)
+    public static async Task VerifyAsync(HttpClient http, int paper, int topic, int outsideTopic,
+        int clo, string setter, string contributor, string other, string director, string dataCell, int setterId)
     {
         void As(string token) => http.DefaultRequestHeaders.Authorization = new("Bearer", token);
         string versions = $"/api/papers/{paper}/versions";
@@ -96,14 +96,29 @@ internal static class WorkspaceFlow
         Assert.AreEqual(HttpStatusCode.Unauthorized,(await http.GetAsync($"{root}/attachments/{attachment}")).StatusCode);
         As(setter);
 
-        // Disposable fixture ko correction state mein rakh kar frozen version dobara parhte hain.
-        using var freeze=new SqlCommand("""
-            UPDATE dbo.PAPER_VERSION SET frozen_at=SYSUTCDATETIME() WHERE paper_version_id=@version;
-            UPDATE dbo.PAPER SET workflow_status='CHANGES_REQUESTED' WHERE paper_id=@paper;
-            """,db);
-        freeze.Parameters.AddWithValue("@version",id);
-        freeze.Parameters.AddWithValue("@paper",paper);
-        await freeze.ExecuteNonQueryAsync();
+        async Task<int> SubmitChecked(int versionId)
+        {
+            string path=$"/api/paper-versions/{versionId}";
+            As(other); // Is fixture mein yeh token course ke HOD ka hai.
+            var data=await http.GetFromJsonAsync<JsonElement>(path);
+            foreach(var map in data.GetProperty("cloMappings").EnumerateArray())
+            {
+                if(map.GetProperty("check_status").GetString()=="ALIGNED") continue;
+                int mapping=map.GetProperty("mapping_id").GetInt32();
+                (await http.PostAsJsonAsync($"/api/clo-mappings/{mapping}/reviews",
+                    new {status="ALIGNED",explanation="The scored task checks the selected exam CLO."})).EnsureSuccessStatusCode();
+            }
+            As(setter);
+            (await http.PostAsync(path+"/similarity/exact",null)).EnsureSuccessStatusCode();
+            var submitted=await Result(await http.PostAsJsonAsync(path+"/submit",
+                new {rowVersion=Token(data.GetProperty("header")[0])}),"submission");
+            return submitted.GetProperty("submission_id").GetInt32();
+        }
+        int initialSubmission=await SubmitChecked(id);
+        As(director);
+        (await http.PostAsJsonAsync($"/api/submissions/{initialSubmission}/versions/{id}/decisions",
+            new {stage="DIRECTOR",decision="CHANGES_REQUESTED",reason="Clarify second stem"})).EnsureSuccessStatusCode();
+        As(setter);
         var correction=await Result(await http.PostAsJsonAsync(versions,new {reason="Correction"}),"version");
         string next=$"/api/paper-versions/{correction.GetProperty("paper_version_id").GetInt32()}";
         token=Token(correction);
@@ -120,6 +135,20 @@ internal static class WorkspaceFlow
         CollectionAssert.AreEqual(png,await http.GetByteArrayAsync($"{root}/attachments/{attachment}"));
         var history=await http.GetFromJsonAsync<JsonElement>(versions);
         Assert.AreEqual(2,history.GetProperty("versions").GetArrayLength());
+        int finalVersion=correction.GetProperty("paper_version_id").GetInt32();
+        int finalSubmission=await SubmitChecked(finalVersion);
+        As(director);
+        var review=await Result(await http.PostAsJsonAsync($"/api/submissions/{finalSubmission}/versions/{finalVersion}/decisions",
+            new {stage="DIRECTOR",decision="APPROVED"}),"review");
+        int approval=review.GetProperty("review_id").GetInt32();
+        var pdf=await http.PostAsync($"/api/approvals/{approval}/print-exports",null);
+        pdf.EnsureSuccessStatusCode();
+        Assert.AreEqual("application/pdf",pdf.Content.Headers.ContentType!.MediaType);
+        As(dataCell);
+        var receipt=await Result(await http.PostAsJsonAsync($"/api/approvals/{approval}/sealed-receipt",
+            new {deliveredByUserId=setterId}),"receipt");
+        Assert.AreEqual(approval,receipt.GetProperty("approval_review_id").GetInt32());
+        Assert.AreEqual("SEALED",receipt.GetProperty("seal_status").GetString());
     }
 
     private static string Token(JsonElement row) => row.GetProperty("row_version").GetString()!;

@@ -91,10 +91,10 @@ internal static class DatesheetFlow
         return result.GetProperty("history");
     }
 
-    private static Task<HttpResponseMessage> Publish(HttpClient http,int id)
+    internal static Task<HttpResponseMessage> Publish(HttpClient http,int id)
         => http.PostAsync($"/api/datesheets/{id}/publish",null);
 
-    private static async Task<int> Draft(HttpClient http,string route,int[] ids)
+    internal static async Task<int> Draft(HttpClient http,string route,int[] ids)
     {
         using var result = await Upload(http,route,ids);
         Assert.IsTrue(result.IsSuccessStatusCode,await result.Content.ReadAsStringAsync());

@@ -106,6 +106,7 @@ internal static class AcademicSetupFlow
         // Assignment ka end starts_at se baad hona chahiye (SQL second precision).
         await Task.Delay(1100);
         (await http.PostAsync($"/api/academic/teaching-assignments/{assignment}/end", null)).EnsureSuccessStatusCode();
+        await DatesheetFlow.VerifyAsync(http, db, dataCell, directorToken);
         http.DefaultRequestHeaders.Authorization = new("Bearer",directorToken);
     }
 

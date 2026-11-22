@@ -31,10 +31,11 @@ public class SetupProcedures(BiitDbContext db)
     }
 
     public async Task<Dictionary<string, List<Dictionary<string, object?>>>> ReadAsync(
-        string procedure, int actorId, string[] names, CancellationToken cancellation)
+        string procedure, int actorId, string[] names, CancellationToken cancellation, params SqlParameter[] parameters)
     {
         await using var connection = Connect();
         using var command = Command(connection, procedure, actorId);
+        command.Parameters.AddRange(parameters);
         await connection.OpenAsync(cancellation);
         using var reader = await command.ExecuteReaderAsync(cancellation);
         var result = new Dictionary<string, List<Dictionary<string, object?>>>();

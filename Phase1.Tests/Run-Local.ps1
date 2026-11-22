@@ -15,6 +15,8 @@ try {
         $result=$sql | sqlcmd -S $server -E -C -b -x; if ($LASTEXITCODE -ne 0) { $result | Select-String "^Msg |^Sqlcmd:|Error|failed" }
         if ($LASTEXITCODE -ne 0) { throw "Fixture setup failed at $file" }
     }
+    sqlcmd -S $server -E -C -b -d $database -v "TargetDatabase=$database" -i "$PSScriptRoot/../Sql/003_DatesheetCourses.sql"
+    if ($LASTEXITCODE -ne 0) { throw 'Phase 3 SQL installation failed' }
     $pipe=((sqllocaldb info $instance | Select-String 'np:\\\\').Line -split 'np:',2)[1].Trim()
     $env:Phase1Admin="Server=$server;Database=$database;Integrated Security=true;Encrypt=false"
     $password='T3st!'+[Guid]::NewGuid().ToString('N')

@@ -72,12 +72,6 @@ public class StaffFlow
             Assert.AreEqual("Final", exam!.ExamType);
             Assert.AreEqual("PUBLISHED", exam.DatesheetStatus);
             await AcademicSetupFlow.VerifyAsync(http, db, restricted, token);
-            await Execute(db, """
-                DECLARE @other int=(SELECT MIN(exam_cycle_id) FROM dbo.EXAM_CYCLE);
-                INSERT dbo.DATESHEET(exam_cycle_id, revision_number, status, published_by_user_id, published_at)
-                SELECT @other, 1, 'PUBLISHED', user_id, SYSUTCDATETIME() FROM dbo.APP_USER WHERE email='director@example.invalid';
-                UPDATE dbo.SYSTEM_SETTINGS SET active_exam_cycle_id=@other, active_datesheet_id=SCOPE_IDENTITY();
-                """);
             var changed = await http.GetFromJsonAsync<CurrentExamResponse>(route);
             Assert.AreNotEqual(exam.ActiveExamCycleId, changed!.ActiveExamCycleId);
             Assert.AreEqual("Spring 2026", changed.SessionName);

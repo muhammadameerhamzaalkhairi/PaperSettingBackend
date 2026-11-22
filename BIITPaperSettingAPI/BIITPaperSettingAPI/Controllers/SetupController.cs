@@ -22,6 +22,7 @@ public abstract class SetupController(SetupProcedures procedures) : ControllerBa
             return NoContent();
         }
         catch (SqlException error) when (error.Number == 51001) { return Forbid(); }
+        catch (SqlException error) when (error.Number == 51040) { return NotFound(new { message = error.Message }); }
         catch (SqlException error) when (error.Number is 51010 or 51020 or 51060) { return Conflict(new { message = error.Message }); }
         catch (SqlException error) when (error.Number is 2601 or 2627) { return Conflict("Duplicate record."); }
         catch (SqlException error) when (error.Number is 547 or 2628) { return BadRequest("Invalid reference or field value."); }
@@ -40,6 +41,7 @@ public abstract class SetupController(SetupProcedures procedures) : ControllerBa
             (error.Number == 51031 && (error.Message.Contains("Not a paper contributor") || error.Message.Contains("Contributors add extra") || error.Message.Contains("cannot be edited by you")))) { return Forbid(); }
         catch (SqlException error) when (error.Number is 51003 or 51004 or 51006 ||
             (error.Number == 51031 && (error.Message.Contains("stale") || error.Message.Contains("latest draft") || error.Message.Contains("frozen") || error.Message.Contains("Copy question to a new revision")))) { return Conflict(new { message = error.Message }); }
+        catch (SqlException error) when (error.Number == 51050) { return Conflict(new { message = error.Message }); }
         catch (SqlException error) when (error.Number == 51031) { return BadRequest(new { message = error.Message }); }
         catch (SqlException error) when (error.Number == 51020 && error.Message.Contains("not assigned to you")) { return Forbid(); }
         catch (SqlException error) when (error.Number == 51020 && error.Message.Contains("Invalid topic/status")) { return BadRequest(error.Message); }

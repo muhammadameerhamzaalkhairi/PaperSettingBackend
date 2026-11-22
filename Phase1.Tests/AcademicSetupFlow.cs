@@ -110,6 +110,7 @@ internal static class AcademicSetupFlow
         var firstTeacher = await Login(http, "amir@example.invalid", password);
         var secondTeacher = await Login(http, "saeed@example.invalid", password);
         await CoverageFlow.VerifyAsync(http, db, directorToken, hod, firstTeacher, secondTeacher);
+        await CheckingFlow.VerifyAsync(http, db, restricted, hod, firstTeacher);
         http.DefaultRequestHeaders.Authorization = new("Bearer",directorToken);
     }
 
